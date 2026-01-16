@@ -20,7 +20,7 @@ public class UserAuthController {
         this.userAuthEntityService = userAuthEntityService;
     }
 
-    @PostMapping("/auth/register")
+    @PostMapping("/register")
     public ResponseEntity<String> register(@RequestBody UserAuthEntity userAuthEntity) {
         userAuthEntity.setPassword(passwordEncoder.encode(userAuthEntity.getPassword()));
         userAuthEntityService.save(userAuthEntity);

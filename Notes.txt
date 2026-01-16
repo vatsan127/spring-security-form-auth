@@ -1,5 +1,5 @@
 Method 1
-    With spring security dependency default user is created
+    With Spring Security dependency, a default user is created
     username: "user"
     password: auto-generated, generated password is logged at the time of application startup.
 
@@ -21,56 +21,92 @@ Method 3
         InMemoryUserDetailsManager (implements UserDetailsManager) - Implementation of UserDetailsManager which is backed by an in-memory map.
 
     PasswordEncoding
-        The default, format for storing the password is : {id}encoded_password
+        The default format for storing the password is: {id}encoded_password
         Storing without encoding: {noop}plain_password
         Storing with encoding: {bcrypt}encoded_password
-        By default DelegationPasswordEncoder first checks the format of stored password {id} i.e. {bcrypt},
-          so it passes the incoming password to BcryptPasswordEncoder, and after hashing, it does the matching.
-        We can define which PasswordEncoder to use directly. Then control will not go to "DelegationPasswordEncoder",
-         and it directly goes to specific Password Encoder, so now no need to put {id} in front of password.
+        By default, DelegatingPasswordEncoder first checks the format of stored password {id} i.e. {bcrypt},
+          so it passes the incoming password to BCryptPasswordEncoder, and after hashing, performs the matching.
+        We can define which PasswordEncoder to use directly. Then control will not go to "DelegatingPasswordEncoder",
+          and it directly goes to specific PasswordEncoder, so there is no need to put {id} in front of password.
 
 Method 4
-    Storing UserName and Password (after hashed) in DB
+    Storing UserName and Password (hashed) in DB
     Uses Spring JPA to store the user data in database.
 
-Form based Authentication
-    It’s a stateful authentication method.
-        Stateful authentication means, server maintains the user authentication state (aka Session ).
-        So that user don’t have to provide username/password every time with each request.
+    Implementation requires:
+        1. Entity class (UserAuthEntity) implements UserDetails
+            - Allows direct integration with Spring Security
+            - Must implement getUsername(), getPassword(), getAuthorities()
+
+        2. Service class (UserAuthEntityService) implements UserDetailsService
+            - Core method: loadUserByUsername(String username)
+            - Called automatically by Spring Security during login
+            - Fetches user from database via JPA repository
+            - Throws UsernameNotFoundException if user not found
+
+Form-Based Authentication
+    It's a stateful authentication method.
+        Stateful authentication means the server maintains the user's authentication state (aka Session).
+        So that users don't have to provide username/password every time with each request.
 
     User enters their credentials (i.e. username/password) in an HTML login form.
     On successful authentication, a session (JSESSIONID) is created to maintain the user authentication state across different requests.
-    Now, with subsequent request, client only passes JSESSIONID and not username/password. And server validates it with stored JSESSIONID.
+    Now, with subsequent requests, the client only passes JSESSIONID and not username/password. The server validates it against the stored JSESSIONID.
 
 Session Creation Policy
     IF_REQUIRED
-        HttpSession is only created when needed(DEFAULT).
+        HttpSession is only created when needed (DEFAULT).
         For example:
-            public api for which authentication is not required, HTTPSession will not be created if this policy will be chosen.
+            For a public API for which authentication is not required, HttpSession will not be created if this policy is chosen.
 
     ALWAYS
-        HttpSession is always created. If already present then use it.
+        HttpSession is always created. If already present, it is reused.
         For example:
-            even for public api for which authentication is not required, HTTPSession will be created if this policy will be chosen.
+            Even for a public API for which authentication is not required, HttpSession will be created if this policy is chosen.
 
     NEVER
-        Do not creates a Session, but use if present.
+        Does not create a Session, but uses one if present.
 
     STATELESS
         No Session is created, used for Stateless applications.
 
-Disadvantages of Form based authentication:
-1. Vulnerable to Security issues like CSRF and Session hijacking. Be default, CSRF is enabled for form based login and we should not disable it.
-2. Session Management is big overhead and in case of distributed system it can lead to scalability issue.
-3. Database load: if there are multiple servers then we might need to store the session in DB or Cache, which again required memory and lookup time. Which can cause latency issue.
+Session Storage
+    By default, sessions are stored in-memory (lost on server restart).
+    This project uses JDBC session storage (configured in application-security.yaml):
+        spring.session.store-type: jdbc
+        spring.session.jdbc.initialize-schema: always
+    Benefits:
+        - Sessions persist across application restarts
+        - Works in clustered/distributed environments
+        - Spring Session JDBC auto-creates required tables
+
+Disadvantages of Form-Based Authentication:
+1. Vulnerable to security issues like CSRF and session hijacking. By default, CSRF is enabled for form-based login and should not be disabled.
+2. Session management is a significant overhead and in case of a distributed system, it can lead to scalability issues.
+3. Database load: If there are multiple servers, we might need to store the session in DB or cache, which requires memory and adds lookup time, causing latency issues.
 
 API Endpoints
-http://localhost:8080/spring-security-form-auth/login
-http://localhost:8080/spring-security-form-auth/logout
+    Login (GET) - Displays Spring Security's default login form
+        http://localhost:8080/spring-security-form-auth/login
 
-http://localhost:8080/spring-security-form-auth/register
-{
-    "username": "srivatsan",
-    "password": "password",
-    "role": "USER"
-}
+    Login (POST) - Processes login form submission (handled by Spring Security)
+        http://localhost:8080/spring-security-form-auth/login
+        Form parameters: username, password
+
+    Logout (POST) - Invalidates session and clears authentication
+        http://localhost:8080/spring-security-form-auth/logout
+        - Deletes JSESSIONID cookie
+        - Removes session from database (JDBC store)
+        - Redirects to /login?logout
+
+    Register (POST) - Creates new user account
+        http://localhost:8080/spring-security-form-auth/register
+        Request body (JSON):
+        {
+            "username": "srivatsan",
+            "password": "password",
+            "role": "USER"
+        }
+
+    Home (GET) - Welcome page (no authentication required)
+        http://localhost:8080/spring-security-form-auth/

@@ -1,16 +1,5 @@
 # Spring Security Form-Based Authentication
 
-A learning project demonstrating form-based authentication with Spring Security.
-
-## Tech Stack
-
-- Java 21
-- Spring Boot 4.0.1
-- Spring Security
-- Spring Data JPA
-- Spring Session JDBC
-- PostgreSQL
-
 ## User Authentication Methods
 
 ### Method 1: Default User
@@ -59,6 +48,26 @@ You can define a specific `PasswordEncoder` directly, bypassing `DelegatingPassw
 ### Method 4: Database Storage (Used in this project)
 
 Store username and password (hashed) in the database using Spring JPA.
+
+**Class Hierarchy:**
+```
+UserDetails (Core interface representing user information)
+  - getUsername(), getPassword(), getAuthorities()
+  - isAccountNonExpired(), isAccountNonLocked(), isCredentialsNonExpired(), isEnabled()
+        |
+        V
+UserAuthEntity (implements UserDetails)
+  - JPA entity stored in database
+  - Direct integration with Spring Security
+
+UserDetailsService (Core interface which loads user-specific data)
+  - loadUserByUsername(String username)
+        |
+        V
+UserAuthEntityService (implements UserDetailsService)
+  - Fetches user from database via JPA repository
+  - Called automatically by Spring Security during login
+```
 
 **Implementation requires:**
 
@@ -123,6 +132,36 @@ Spring Security provides comprehensive session management configuration.
 | **NEVER** | Does not create a session, but uses one if present. Useful when session creation is handled externally. |
 | **STATELESS** | No session is created. Used for stateless applications like REST APIs with JWT authentication. |
 
+## Session Timeout
+
+Session timeout defines how long a session remains valid after the last user activity.
+
+**This project's configuration** (in `application-security.yaml`):
+
+```yaml
+server:
+  servlet:
+    session:
+      timeout: 5m
+```
+
+| Property | Description | Default |
+|----------|-------------|---------|
+| `server.servlet.session.timeout` | Duration before an inactive session expires (set to 5 minutes in this project) | 30m |
+
+**Timeout Behavior:**
+- After 5 minutes of inactivity, the session expires
+- User must re-authenticate on the next request
+- Timeout resets with each request (sliding expiration)
+
+**Common Timeout Values:**
+| Value | Use Case |
+|-------|----------|
+| `5m` | Development/testing (used in this project) |
+| `30m` | Standard web applications |
+| `1h` | Applications requiring longer sessions |
+| `24h` | Remember-me style sessions |
+
 ## Session Storage
 
 By default, sessions are stored in-memory (lost on server restart).
@@ -130,6 +169,11 @@ By default, sessions are stored in-memory (lost on server restart).
 This project uses **JDBC session storage** (configured in `application-security.yaml`):
 
 ```yaml
+server:
+  servlet:
+    session:
+      timeout: 5m
+
 spring:
   session:
     store-type: jdbc

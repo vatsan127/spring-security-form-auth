@@ -81,14 +81,47 @@ It's a **stateful** authentication method. The server maintains the user's authe
 2. On successful authentication, a session (`JSESSIONID`) is created to maintain authentication state across requests
 3. With subsequent requests, the client only passes `JSESSIONID` (not username/password). The server validates it against the stored session
 
+## Session Management
+
+Spring Security provides comprehensive session management configuration.
+
+**This project's configuration** (in `SecurityConfiguration.java`):
+
+```java
+.sessionManagement(session -> session
+    .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+    .maximumSessions(1)
+    .maxSessionsPreventsLogin(false)
+)
+```
+
+### Key Configuration Options
+
+| Option | Description |
+|--------|-------------|
+| `sessionCreationPolicy` | Controls when sessions are created (see Session Creation Policy below) |
+| `maximumSessions` | Limits concurrent sessions per user (set to 1 in this project) |
+| `maxSessionsPreventsLogin` | `false` (default): New login expires oldest session. `true`: New login is blocked until existing session expires |
+| `invalidSessionUrl` | Redirect URL when an invalid session is detected |
+| `sessionFixation` | Protection against session fixation attacks |
+
+### Session Fixation Protection
+
+| Strategy | Description |
+|----------|-------------|
+| `migrateSession` | Creates new session, copies attributes (DEFAULT) |
+| `newSession` | Creates new session, does not copy attributes |
+| `changeSessionId` | Changes session ID without creating new session |
+| `none` | No protection (not recommended) |
+
 ## Session Creation Policy
 
 | Policy | Description |
 |--------|-------------|
-| **IF_REQUIRED** | HttpSession is only created when needed (DEFAULT). For public APIs, no session is created. |
+| **IF_REQUIRED** | HttpSession is only created when needed (DEFAULT). For public APIs, no session is created. This is the appropriate choice for form-based authentication. |
 | **ALWAYS** | HttpSession is always created. If already present, it is reused. |
-| **NEVER** | Does not create a session, but uses one if present. |
-| **STATELESS** | No session is created. Used for stateless applications. |
+| **NEVER** | Does not create a session, but uses one if present. Useful when session creation is handled externally. |
+| **STATELESS** | No session is created. Used for stateless applications like REST APIs with JWT authentication. |
 
 ## Session Storage
 

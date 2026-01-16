@@ -1,0 +1,20 @@
+spring:
+#  config.activate.on-profile: postgres
+  datasource:
+    url: jdbc:postgresql://localhost:5432/user_db?currentSchema=public
+    username: srivatsan
+    password: password
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 10
+      pool-name: postgres-con
+      auto-commit: false
+
+  jpa:
+    open-in-view: false
+    hibernate.ddl-auto: update
+    show-sql: true
+    properties.hibernate.format_sql: true
+  sql.init.mode: never # always
+  output.ansi.enabled: always

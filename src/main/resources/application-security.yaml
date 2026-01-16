@@ -1,0 +1,16 @@
+server:
+  servlet:
+    session:
+      timeout: 5m
+
+spring:
+#  security:
+#    user:
+#      name: srivatsan
+#      password: password
+#      roles: ADMIN
+
+  session:
+    store-type: jdbc
+    jdbc:
+      initialize-schema: always

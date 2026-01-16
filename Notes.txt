@@ -1,0 +1,48 @@
+Method 1
+    With spring security dependency default user is created
+    username: "user"
+    password: auto-generated, generated password is logged at the time of application startup.
+
+Method 2
+    Using application properties
+        spring.security.user.name: "srivatsan"
+        spring.security.user.password: "password"
+        spring.security.user.roles: "ADMIN"
+
+Method 3
+    By creating custom InMemoryUserDetailsManager Bean
+
+        UserDetailsService - Core interface which loads user-specific data.
+                |
+                V
+        UserDetailsManager (extends UserDetailsService) - Extension of the UserDetailsService which provides the ability to create new users and update existing ones.
+                |
+                V
+        InMemoryUserDetailsManager (implements UserDetailsManager) - Implementation of UserDetailsManager which is backed by an in-memory map.
+
+    PasswordEncoding
+        The default, format for storing the password is : {id}encoded_password
+        Storing without encoding: {noop}plain_password
+        Storing with encoding: {bcrypt}encoded_password
+        By default DelegationPasswordEncoder first checks the format of stored password {id} i.e. {bcrypt},
+          so it passes the incoming password to BcryptPasswordEncoder, and after hashing, it does the matching.
+        We can define which PasswordEncoder to use directly. Then control will not go to "DelegationPasswordEncoder",
+         and it directly goes to specific Password Encoder, so now no need to put {id} in front of password.
+
+Method 4
+    Storing UserName and Password (after hashed) in DB
+
+
+
+
+
+API Endpoints
+http://localhost:8080/spring-security-form-auth/login
+http://localhost:8080/spring-security-form-auth/logout
+
+http://localhost:8080/spring-security-form-auth/register
+{
+    "username": "srivatsan",
+    "password": "password",
+    "role": "USER"
+}

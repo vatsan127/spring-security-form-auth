@@ -31,10 +31,38 @@ Method 3
 
 Method 4
     Storing UserName and Password (after hashed) in DB
+    Uses Spring JPA to store the user data in database.
 
+Form based Authentication
+    It’s a stateful authentication method.
+        Stateful authentication means, server maintains the user authentication state (aka Session ).
+        So that user don’t have to provide username/password every time with each request.
 
+    User enters their credentials (i.e. username/password) in an HTML login form.
+    On successful authentication, a session (JSESSIONID) is created to maintain the user authentication state across different requests.
+    Now, with subsequent request, client only passes JSESSIONID and not username/password. And server validates it with stored JSESSIONID.
 
+Session Creation Policy
+    IF_REQUIRED
+        HttpSession is only created when needed(DEFAULT).
+        For example:
+            public api for which authentication is not required, HTTPSession will not be created if this policy will be chosen.
 
+    ALWAYS
+        HttpSession is always created. If already present then use it.
+        For example:
+            even for public api for which authentication is not required, HTTPSession will be created if this policy will be chosen.
+
+    NEVER
+        Do not creates a Session, but use if present.
+
+    STATELESS
+        No Session is created, used for Stateless applications.
+
+Disadvantages of Form based authentication:
+1. Vulnerable to Security issues like CSRF and Session hijacking. Be default, CSRF is enabled for form based login and we should not disable it.
+2. Session Management is big overhead and in case of distributed system it can lead to scalability issue.
+3. Database load: if there are multiple servers then we might need to store the session in DB or Cache, which again required memory and lookup time. Which can cause latency issue.
 
 API Endpoints
 http://localhost:8080/spring-security-form-auth/login
